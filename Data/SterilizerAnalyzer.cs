@@ -9,8 +9,8 @@ namespace VisualBigData.Data
 		private readonly CsvConfiguration config;
 		private readonly Dictionary<string, SterilizerInfo> _stations;
         //public int Station { get; private set; } = 4;
-		public int Chunks { get; set; } = 40;
-		public float MinPressure { get; set; } = 0.01f;
+		public int Chunks { get; set; } = 36;
+		public float MinPressure { get; set; } = 0.03f;
         public int DataPoint { get; private set; }
         public int MaxDataProcess { get; set; }
 		public string FilePath { get; private set; }
@@ -141,13 +141,19 @@ namespace VisualBigData.Data
 						{
 							info.LastRunningStatus = false;
 							info.CycleStopped.Add(chunk[0].ts);
+							var spanTime = info.CycleStopped[^1] - info.CycleStarted[^1];
+							if (spanTime.TotalMinutes < 15d)
+							{
+								info.CycleStopped.RemoveAt(info.CycleStopped.Count - 1);
+								info.CycleStarted.RemoveAt(info.CycleStarted.Count - 1);
+							}
 						}
 						chunk.Clear();
 					}
 				}
 
-				//var deltas = info.GetTimeDeltas();
-				//info.CalculateCycle();
+				var deltas = info.GetTimeDeltas();
+				info.CalculateCycle();
 
 				Console.WriteLine(station.Key);
 				info.Print();

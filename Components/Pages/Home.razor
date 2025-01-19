@@ -75,7 +75,8 @@
 		}
 		await Task.Run(() =>
 		{
-			Analyzer.LoadDataRange(new DateTime(2022, 10, 1), new DateTime(2022, 10, 3));
+			Analyzer.LoadData();
+			//Analyzer.LoadDataRange(new DateTime(2022, 10, 1), new DateTime(2022, 10, 3));
 		});
 		var sterilizerStation = Analyzer.Stations;
 		foreach(var sterilizer in sterilizerStation)
