@@ -1,0 +1,105 @@
+﻿@page "/"
+
+<PageTitle>Home</PageTitle>
+<button class="btn btn-primary" @onclick="AnalyzeData">Analyze</button>
+<PlotlyChart class="card shadow m-5" style="height: 60vh; min-height: 500px"
+			 @bind-Config="config" @bind-Layout="layout" @bind-Data="data" @ref="chart"
+			 />
+@if (Analyzer.Stations.ContainsKey("STERILIZER_1"))
+{
+	<table class="table">
+		<thead>
+			<tr>
+				<th scope="col">Metrics</th>
+				<th scope="col">Sterilizer #1</th>
+				<th scope="col">Sterilizer #2</th>
+				<th scope="col">Sterilizer #3</th>
+				<th scope="col">Sterilizer #4</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<th scope="row">Total Cycle</th>
+				<td>@Analyzer.Stations["STERILIZER_1"].CycleStopped.Count</td>
+				<td>@Analyzer.Stations["STERILIZER_2"].CycleStopped.Count</td>
+				<td>@Analyzer.Stations["STERILIZER_3"].CycleStopped.Count</td>
+				<td>@Analyzer.Stations["STERILIZER_4"].CycleStopped.Count</td>
+			</tr>
+			<tr>
+				<th scope="row">Average Cycle Time</th>
+				<td>@Analyzer.Stations["STERILIZER_1"].AverageCycleTime</td>
+				<td>@Analyzer.Stations["STERILIZER_2"].AverageCycleTime</td>
+				<td>@Analyzer.Stations["STERILIZER_3"].AverageCycleTime</td>
+				<td>@Analyzer.Stations["STERILIZER_4"].AverageCycleTime</td>
+			</tr>
+
+		</tbody>
+	</table>
+}
+
+
+@code{
+	private SterilizerAnalyzer Analyzer;
+	private PlotlyChart chart;
+	private Config config;
+	private Layout layout;
+	private IList<ITrace> data;
+
+	protected override void OnInitialized()
+	{
+		Analyzer = SterilizerAnalyzer.Instance;
+		config = new Config
+		{
+			Responsive = true
+		};
+
+		layout = new Layout
+		{
+			Title = new Plotly.Blazor.LayoutLib.Title {
+				Text = "Pressure Data"
+			},
+			HoverMode = Plotly.Blazor.LayoutLib.HoverModeEnum.XUnified
+		};
+
+		data = new List<ITrace>();
+
+		base.OnInitialized();
+	}
+
+	private async Task AnalyzeData()
+	{
+		await chart.Clear();
+		if (Analyzer == null)
+		{
+			Analyzer = SterilizerAnalyzer.Instance;
+		}
+		await Task.Run(() =>
+		{
+			Analyzer.LoadDataRange(new DateTime(2022, 10, 1), new DateTime(2022, 10, 3));
+		});
+		var sterilizerStation = Analyzer.Stations;
+		foreach(var sterilizer in sterilizerStation)
+		{
+			var info = sterilizer.Value;
+			var pressureData = info.PressureRecords;
+			var x = new List<object>();
+			var y = new List<object>();
+			foreach(var data in pressureData)
+			{
+				x.Add(data.TimeStamp);
+				y.Add(data.Pressure);
+			}
+			await chart.AddTrace(new Scatter
+			{
+				Name = sterilizer.Key,
+				Mode = Plotly.Blazor.Traces.ScatterLib.ModeFlag.Lines, // | ModeFlag.Markers,
+				X = x,
+				Y = y
+			});
+			Analyzer.Analyze();
+			var x1 = info.AverageCycleTime;
+			var y1 = info.MaxCycleTime;
+			var z1 = info.MinCycleTime;
+		}
+	}
+}

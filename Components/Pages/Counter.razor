@@ -1,0 +1,40 @@
+﻿
+@page "/counter"
+@inject IJSRuntime JsRuntime
+
+<PageTitle>Counter</PageTitle>
+
+<div id="chart_div" class="card shadow m-5" style="height: 400px;"></div>
+
+<h1>Counter</h1>
+
+<p role="status">Current count: @currentCount</p>
+
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+
+@code {
+    public int test;
+    private SterilizerAnalyzer data1 = SterilizerAnalyzer.Instance;
+    private int currentCount = 0;
+
+    private async void PlotData(DateTime[] xs, double[] ys)
+    {
+        await JsRuntime.InvokeVoidAsync("createNewChart", new { xs, ys });
+        await JsRuntime.InvokeVoidAsync("displayTickerAlert1", "ujang", "200rb!");
+    }
+
+    private void IncrementCount()
+    {
+        data1.LoadData();
+        var record1 = data1.Stations["STERILIZER_1"].PressureRecords.ToArray();
+        var Date1 = new DateTime[record1.Length];
+        var Pressure1 = new double[record1.Length];
+        for (int i = 0; i < record1.Length; i++)
+        {
+            Date1[i] = record1[i].TimeStamp;
+            Pressure1[i] = record1[i].Pressure;
+        }
+        PlotData(Date1, Pressure1);
+        currentCount++;
+    }
+}
